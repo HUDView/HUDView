@@ -1,0 +1,55 @@
+#!/bin/bash
+# DESCRIPTION: Builds and creates a Debian package for the HUDView Light Sensor.
+
+# Move to the directory of this script.
+cd $(dirname "${BASH_SOURCE[ ${#BASH_SOURCE[@]} - 1 ]}")
+
+# Clean previous build artifacts.
+rm -f *.deb &> /dev/null
+
+# Execute the build.
+pushd . &> /dev/null
+cd ../src
+make clean &> /dev/null
+if ! make all; then
+    echo "Build failed!"
+    exit 1
+fi
+popd &> /dev/null
+
+# Check if a version was supplied.
+if [ "$#" -eq 1 ]; then
+    VERSION="$1"
+else
+    VERSION=1.0.0
+fi
+
+# Create a Debian package for installation.
+pushd . &> /dev/null
+PACKAGE=hudviewlightsensor
+mkdir -p ${PACKAGE}/opt/hudview/light_sensor
+cp ../src/run_light_sensor ${PACKAGE}/opt/hudview/light_sensor/
+mkdir -p ${PACKAGE}/lib/systemd/system
+cp ../hudview_light_sensor.service ${PACKAGE}/lib/systemd/system/
+mkdir -p ${PACKAGE}/DEBIAN
+printf "Package: ${PACKAGE}\nArchitecture: all\nMaintainer: Ben Prisby\nPriority: optional\nVersion: ${VERSION}\nDescription: ${PACKAGE}\n" > ${PACKAGE}/DEBIAN/control
+printf '#!/bin/sh\nsudo systemctl stop hudview_light_sensor' > "${PACKAGE}/DEBIAN/preinst"
+printf '#!/bin/sh\nsudo systemctl enable hudview_light_sensor\nsudo systemctl start hudview_light_sensor' > "${PACKAGE}/DEBIAN/postinst"
+chmod 755 "${PACKAGE}/DEBIAN/preinst"
+chmod 755 "${PACKAGE}/DEBIAN/postinst"
+if ! dpkg-deb --build ${PACKAGE}; then
+    popd &> /dev/null
+    rm -rf ${PACKAGE} &> /dev/null
+    exit 1
+fi
+popd &> /dev/null
+
+# Clean up the build artifacts.
+cd ../src
+make clean &> /dev/null
+cd - &> /dev/null
+rm -rf ${PACKAGE} &> /dev/null
+
+# Done!
+echo "Application successfully created!"
+
