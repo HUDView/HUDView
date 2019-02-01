@@ -2,14 +2,17 @@
  *  @brief HUDView light sensor control application.
  *
  *  This program initializes and periodically reads the Adafruit TSL2561 light sensor lux value and appends it to the
- *  the specified output file for downstream consumption by the control application.
+ *  the specified output pipe for downstream consumption by the control application.
  *
  *  @author Ben Prisby (BenPrisby)
  */
 
+#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "tsl2561.h"
@@ -19,6 +22,7 @@
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 static void *pvSensor = NULL;
+static const char *pcPipe = "/tmp/hudview_light_sensor_output";
 static FILE *pOutput = NULL;
 /*--------------------------------------------------------------------------------------------------------------------*/
 
@@ -35,46 +39,58 @@ int main( int argc, char ** argv )
     /* Install the Ctrl-C handler. */
     signal( SIGINT, vSignalHandler );
 
-    /* Attempt to open the output file for writing. */
-    pOutput = fopen( "/tmp/hudview_light_sensor_output", "a" );
-
-    if ( NULL != pOutput )
+    /* Attempt to establish a named pipe for output. */
+    if ( 0 <= mkfifo( pcPipe, 0666 ) )
     {
-        /* Disable buffering on the output file. */
-        setbuf( pOutput, NULL );
+        /* Attempt to open the pipe for writing. */
+        pOutput = fopen( pcPipe, "r+" );
 
-        /* Attempt initialize the sensor. */
-        pvSensor = tsl2561_init( iSensorAddress, pcBus );
-
-        if ( NULL != pvSensor )
+        if ( NULL != pOutput )
         {
-            /* Configure initial settings. */
-            tsl2561_enable_autogain( pvSensor );
-            tsl2561_set_integration_time( pvSensor, TSL2561_INTEGRATION_TIME_13MS );
+            /* Disable buffering on the output file. */
+            setbuf( pOutput, NULL );
 
-            /* Periodically collect the lux reading and append it to the output file. */
-            for ( ;; )
+            /* Attempt initialize the sensor. */
+            pvSensor = tsl2561_init( iSensorAddress, pcBus );
+
+            if ( NULL != pvSensor )
             {
-                lLuxReading = tsl2561_lux( pvSensor );
-                fprintf( pOutput, "%lu\n", lLuxReading );
-                sleep( WAIT_TIME_SECONDS );
-            }
+                /* Configure initial settings. */
+                tsl2561_enable_autogain( pvSensor );
+                tsl2561_set_integration_time( pvSensor, TSL2561_INTEGRATION_TIME_13MS );
 
-            /* Should never get here. */
-            fclose( pOutput );
-            tsl2561_close( pvSensor );
-            iReturn = -1;
+                /* Periodically collect the lux reading and append it to the output file. */
+                for ( ;; )
+                {
+                    lLuxReading = tsl2561_lux( pvSensor );
+                    fprintf( pOutput, "%lu\n", lLuxReading );
+                    sleep( WAIT_TIME_SECONDS );
+                }
+
+                /* Should never get here. */
+                fclose( pOutput );
+                unlink( pcPipe );
+                tsl2561_close( pvSensor );
+                iReturn = -1;
+            }
+            else
+            {
+                /* Failed to initialize sensor. */
+                fclose( pOutput );
+                unlink( pcPipe );
+                iReturn = -1;
+            }
         }
         else
         {
-            /* Failed to initialize sensor. */
-            fclose( pOutput );
+            /* Failed to open the pipe for writing. */
+            unlink( pcPipe );
             iReturn = -1;
         }
     }
     else
     {
-        /* Failed to open file. */
+        /* Failed to create the pipe. */
         iReturn = -1;
     }
 
@@ -88,6 +104,7 @@ static void vSignalHandler( int iSignal )
     if ( SIGINT == iSignal )
     {
         fclose( pOutput );
+        unlink( pcPipe );
         tsl2561_close( pvSensor );
         exit( 0 );
     }
