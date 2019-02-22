@@ -33,10 +33,6 @@ mkdir -p ${PACKAGE}/lib/systemd/system
 cp ../hudview_light_sensor.service ${PACKAGE}/lib/systemd/system/
 mkdir -p ${PACKAGE}/DEBIAN
 printf "Package: ${PACKAGE}\nArchitecture: all\nMaintainer: Ben Prisby\nPriority: optional\nVersion: ${VERSION}\nDescription: ${PACKAGE}\n" > ${PACKAGE}/DEBIAN/control
-printf '#!/bin/sh\nsudo systemctl stop hudview_light_sensor' > "${PACKAGE}/DEBIAN/preinst"
-printf '#!/bin/sh\nsudo systemctl enable hudview_light_sensor\nsudo systemctl start hudview_light_sensor' > "${PACKAGE}/DEBIAN/postinst"
-chmod 755 "${PACKAGE}/DEBIAN/preinst"
-chmod 755 "${PACKAGE}/DEBIAN/postinst"
 if ! dpkg-deb --build ${PACKAGE}; then
     popd &> /dev/null
     rm -rf ${PACKAGE} &> /dev/null
