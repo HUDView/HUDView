@@ -12,6 +12,10 @@
 #include<string.h>
 #include<time.h>
 #include<regex.h>
+#include<stdint.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<signal.h>
 
 typedef struct gps_slave {
 	char read_byte[1];
@@ -21,6 +25,14 @@ typedef struct gps_slave {
 
 gps_slave GPS_SLAVE_DATA;
 
+// ------------- Some Global Vars -------------------
+int run = 1;
+const char* fifoName = "/tmp/hudview_gps_output";
+FILE* fifoOutput;
+int serial_port;
+char read_byte[2];
+unsigned char buf;
+
 // State functions -------------------
 void read_first_byte(unsigned char nbyte, gps_slave* s);
 void read_nmea_sentence_header(unsigned char nbyte, gps_slave* s);
@@ -29,13 +41,14 @@ void read_checksum(unsigned char nbyte, gps_slave* s);
 void validate_checksum(unsigned char nbyte, gps_slave* s);
 // -----------------------------------
 
-int serial_port;
-char read_byte[2];
-unsigned char buf;
-
-
+// State Pointer
 void (*state_ptr)(unsigned char, gps_slave*) = read_first_byte;
 
+//
+// Signal Handler
+static void signalHandler(int signal);
+
+// State 1
 // Read in first byte, if it is not the `$` char then ignore
 void read_first_byte(unsigned char rbyte, gps_slave* slave) {
 	if(rbyte == 0x24) {
@@ -43,6 +56,7 @@ void read_first_byte(unsigned char rbyte, gps_slave* slave) {
 	}	
 }
 
+// State 2
 // Read in the sentence header, in our case, should be GPRMC
 void read_nmea_sentence_header(unsigned char rbyte, gps_slave* slave) {
 	static unsigned char currBuf[6];
@@ -65,6 +79,7 @@ void read_nmea_sentence_header(unsigned char rbyte, gps_slave* slave) {
 	}
 }
 
+// State 3
 // Read entire sentence - Read until *
 void read_sentence(unsigned char rbyte, gps_slave* slave) {
 	static unsigned char sentenceBuf[512];
@@ -75,7 +90,6 @@ void read_sentence(unsigned char rbyte, gps_slave* slave) {
 		slave->sentence_length = rsIndex + 6;
 		memcpy(slave->sentence + 6, sentenceBuf, rsIndex);
 		rsIndex = 0;
-		printf("%s\n", slave->sentence);
 	}
 	else {
 		sentenceBuf[rsIndex] = rbyte;
@@ -83,6 +97,8 @@ void read_sentence(unsigned char rbyte, gps_slave* slave) {
 	}
 }
 
+// State 4
+// Validate checksum, write to pipe
 void validate_checksum(unsigned char rbyte, gps_slave* slave) {
 	static int checkSumInd = 0;
 	static unsigned char vcCheck[3];
@@ -102,16 +118,17 @@ void validate_checksum(unsigned char rbyte, gps_slave* slave) {
 		}
 			
 		if(given == checksum) {
-			printf("Checksum Pass\n");
+      fprintf( fifoOutput, "%s\n", slave->sentence);
 			state_ptr=read_first_byte;
 		}
 		else {
-			printf("Checksum failed\n");
 			state_ptr=read_first_byte;
 		}
 		checkSumInd=0;
 	}
 }
+
+
 
 // Initialize the serial port
 int initialize_serial() {
@@ -135,6 +152,19 @@ int initialize_serial() {
   return 0;
 }
 
+
+// Initialize the fifo
+int initialize_fifo() {
+  if( 0 <= mkfifo(fifoName, 0666)) {
+    fifoOutput = fopen( fifoName, "r+" );
+    setbuf(fifoOutput, NULL);
+    return 0;
+  }
+  else {
+    return -1;
+  }
+}
+
 // Read a single byte from serial port
 char fetch_byte() {
 	char rbyte;
@@ -152,20 +182,33 @@ void get_full_message() {
 	state_ptr(nbyte, &GPS_SLAVE_DATA);	
 }
 
-int main() {	
+int main(int argc, char* argv[]) {	
+
+  signal(SIGINT, signalHandler);
+
 	initialize_serial();
+  initialize_fifo();
 	size_t s = 255;	
 	char* buffer;
 
 
-	while(1) {
+	while(run) {
 		get_full_message();
 		usleep(1000);
 
 	}
-
+  
+  fclose(fifoOutput);
+  unlink(fifoName);
 	close(serial_port);
 
 	return 0;
 		
 }
+
+static void signalHandler(int signal) {
+  if(signal == SIGINT) {
+    run = 0;
+  }
+}
+
