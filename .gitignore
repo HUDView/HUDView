@@ -51,6 +51,34 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Qt
+object_script.*.Release
+object_script.*.Debug
+*_plugin_import.cpp
+/.qmake.cache
+/.qmake.stash
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+*.swp
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.qmlc
+*.jsc
+Makefile*
+*build-*
+target_wrapper.*
+*.autosave
+*.qmlproject.user
+*.qmlproject.user.*
+CMakeLists.txt.user*
+compile_commands.json
+*creator.user*
+
 # Packages
 *.deb
 
