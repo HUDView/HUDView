@@ -69,7 +69,6 @@ qrc_*.cpp
 ui_*.h
 *.qmlc
 *.jsc
-Makefile*
 *build-*
 target_wrapper.*
 *.autosave
