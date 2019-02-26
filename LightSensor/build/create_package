@@ -29,8 +29,6 @@ pushd . &> /dev/null
 PACKAGE=hudviewlightsensor
 mkdir -p ${PACKAGE}/opt/hudview/light_sensor
 cp ../src/run_light_sensor ${PACKAGE}/opt/hudview/light_sensor/
-mkdir -p ${PACKAGE}/lib/systemd/system
-cp ../hudview_light_sensor.service ${PACKAGE}/lib/systemd/system/
 mkdir -p ${PACKAGE}/DEBIAN
 printf "Package: ${PACKAGE}\nArchitecture: all\nMaintainer: Ben Prisby\nPriority: optional\nVersion: ${VERSION}\nDescription: ${PACKAGE}\n" > ${PACKAGE}/DEBIAN/control
 if ! dpkg-deb --build ${PACKAGE}; then
