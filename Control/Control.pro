@@ -25,3 +25,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     src/controlengine.h
+
+unix:!macx: LIBS += -L$$PWD/../Display/ssd1306/bld/ -lssd1306
+
+INCLUDEPATH += $$PWD/../Display/ssd1306/src
+DEPENDPATH += $$PWD/../Display/ssd1306/bld
+
+unix:!macx: PRE_TARGETDEPS += $$PWD/../Display/ssd1306/bld/libssd1306.a
