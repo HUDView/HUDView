@@ -3,4 +3,4 @@ all:
 	gcc -Wall tsl2561.o main.c -o run_light_sensor -lm
 
 clean:
-	rm *.o &> /dev/null
+	rm tsl2561.o run_light_sensor &> /dev/null

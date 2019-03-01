@@ -3,4 +3,4 @@ all:
 	gcc -Wall mma8451_pi.o main.c -o run_accelerometer -lm
 
 clean:
-	rm *.o &> /dev/null
+	rm mma8451_pi.o run_accelerometer &> /dev/null
