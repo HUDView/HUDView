@@ -1,7 +1,9 @@
 from picamera import PiCamera
 from time import sleep
 
+import argparse
 import io
+import os
 
 class StreamingObject(object):
   def __init__(self):
@@ -17,9 +19,28 @@ class StreamingObject(object):
     return self.buffer.write(buf)
 
 
-with PiCamera(resolution='960x540', framerate=15) as camera: 
-  stream = StreamingObject()
-  camera.start_recording("video.h264", format='h264')
-  sleep(5)
-  camera.stop_recording()
+def run(format, fps):
+  fifo = '/tmp/hudview_camera_output'
+
+  try:
+    os.mkfifo(fifo)
+  except OSError as err:
+    return err
+
+  with PiCamera(resolution='160x120', framerate=10) as camera:
+    with open(fifo, "w") as pipe:
+      stream = StreamingObject()
+      camera.hflip = True
+      camera.start_recording(pipe, format='rgb')
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--format', metavar='N', type=int, nargs="+", help="Video output format")
+    parser.add_argument('--fps', metavar='N', type=int, nargs="+", help="Video framerate")
+
+    args = parser.parse_args()
+
+    run(args.format, args.fps)
+
 
