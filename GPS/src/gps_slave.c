@@ -27,8 +27,6 @@ gps_slave GPS_SLAVE_DATA;
 
 // ------------- Some Global Vars -------------------
 int run = 1;
-const char* fifoName = "/tmp/hudview_gps_output";
-FILE* fifoOutput;
 int serial_port;
 char read_byte[2];
 unsigned char buf;
@@ -118,7 +116,7 @@ void validate_checksum(unsigned char rbyte, gps_slave* slave) {
 		}
 			
 		if(given == checksum) {
-      fprintf( fifoOutput, "%s\n", slave->sentence);
+      printf("%s\n", slave->sentence);
 			state_ptr=read_first_byte;
 		}
 		else {
@@ -132,10 +130,10 @@ void validate_checksum(unsigned char rbyte, gps_slave* slave) {
 
 // Initialize the serial port
 int initialize_serial() {
-	serial_port = open("/dev/ttyAMA0", O_RDWR | O_NOCTTY | O_NDELAY);
+	serial_port = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);
 
 	if(serial_port == -1) {
-		printf("Cannot open /dev/ttyAMA0");
+		printf("Cannot open /dev/ttyS0");
 		return -1;
 	}
 
@@ -150,19 +148,6 @@ int initialize_serial() {
 	tcsetattr(serial_port, TCSANOW, &options);
 
   return 0;
-}
-
-
-// Initialize the fifo
-int initialize_fifo() {
-  if( 0 <= mkfifo(fifoName, 0666)) {
-    fifoOutput = fopen( fifoName, "r+" );
-    setbuf(fifoOutput, NULL);
-    return 0;
-  }
-  else {
-    return -1;
-  }
 }
 
 // Read a single byte from serial port
@@ -187,7 +172,6 @@ int main(int argc, char* argv[]) {
   signal(SIGINT, signalHandler);
 
 	initialize_serial();
-  initialize_fifo();
 	size_t s = 255;	
 	char* buffer;
 
@@ -197,9 +181,7 @@ int main(int argc, char* argv[]) {
 		usleep(1000);
 
 	}
-  
-  fclose(fifoOutput);
-  unlink(fifoName);
+ 
 	close(serial_port);
 
 	return 0;
