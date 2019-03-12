@@ -4,6 +4,7 @@ from time import sleep
 import argparse
 import io
 import os
+import signal
 
 class StreamingObject(object):
   def __init__(self):
@@ -19,19 +20,30 @@ class StreamingObject(object):
     return self.buffer.write(buf)
 
 
-def run(format, fps):
+def run(self, format, fps):
   fifo = '/tmp/hudview_camera_output'
+  self.close = False;
 
-  try:
-    os.mkfifo(fifo)
-  except OSError as err:
-    return err
+  def close_camera(sig, frame):
+    self.close = True
+
+  signal.signal(signal.SIGINT, close_camera)
+  signal.signal(signal.SIGTERM, close_camera)
+
+  #try:
+  #  os.mkfifo(fifo)
+  #except OSError as err:
+  #  return err
 
   with PiCamera(resolution='160x120', framerate=10) as camera:
-    with open(fifo, "w") as pipe:
+    with open(fifo, "w") as file:
       stream = StreamingObject()
       camera.hflip = True
-      camera.start_recording(pipe, format='rgb')
+      camera.start_recording(file, format='rgb')
+      if self.close:
+        camera.close()
+        return
+
 
 
 if __name__ == "__main__":
