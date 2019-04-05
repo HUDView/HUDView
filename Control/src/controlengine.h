@@ -10,7 +10,7 @@ class ControlEngine : public QObject
     Q_OBJECT
 
 public:
-    const QString DEFAULT_CONFIG_FILE_PATH = "/opt/HUDView/Control/default.conf";
+    const QString DEFAULT_CONFIG_FILE_PATH = "/opt/hudview/control/default.conf";
     const int PROCESS_START_WAIT_TIMEOUT_MS = 5000;
 
     enum eHUDViewComponentID_t {
