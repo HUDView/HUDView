@@ -9,6 +9,7 @@
 
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "mma8451_pi.h"
