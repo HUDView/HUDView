@@ -245,7 +245,7 @@ void ControlEngine::vHandleData()
             }
 
             case eHUDViewComponentID_HandlebarButtons:
-                /* Nothing to do (yet). */
+                qDebug() << "Handlebar Buttons: Press for button" << pCaller->readAll();
                 break;
 
             case eHUDViewComponentID_LightSensor:
