@@ -3,8 +3,12 @@
 #include <QDebug>
 #include <QFile>
 #include <QRegularExpression>
+#include <QTime>
+
+#include <ssd1306.h>
 
 #include "controlengine.h"
+#include "ubuntumono.h"
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 static void vSignalHandler( int iSignal );
@@ -13,6 +17,12 @@ static void vSignalHandler( int iSignal );
 ControlEngine::ControlEngine( QObject * pParent ) : QObject( pParent )
 {
     m_sConfigPath = "";
+    m_eDisplayMode = eControlDisplay_Time;
+
+    /* Set up the refresh timer for the display. */
+    m_DisplayRefreshTimer.setInterval( 500 );
+    m_DisplayRefreshTimer.setSingleShot( false );
+    connect( &m_DisplayRefreshTimer, SIGNAL( timeout() ), this, SLOT( vUpdateDisplay() ) );
 
     /* Install the Ctrl-C handler. */
     signal( SIGINT, vSignalHandler );
@@ -57,6 +67,9 @@ int ControlEngine::iRun( QCoreApplication * pApp )
                 iReturn = -1;
             }
         }
+
+        /* Initialize the display. */
+        vDisplayInit();
 
         /* Execute the application loop. */
         if ( 0 == iReturn )
@@ -186,13 +199,61 @@ void ControlEngine::vHandleData()
             switch ( eComponentProgramToEnumValue( pCaller->program() ) )
             {
             case eHUDViewComponentID_Accelerometer:
-            case eHUDViewComponentID_Camera:
-            case eHUDViewComponentID_CameraDisplay:
-            case eHUDViewComponentID_Control:
-            case eHUDViewComponentID_ControlDisplay:
+            {
+                QStringList lstData = QString( pCaller->readAll() ).trimmed().split( ',' );
+                qDebug() << "Accelerometer:" << lstData;
+
+                /* Update the data model. */
+                m_xAccelerometerData.dX = lstData.at( 0 ).toDouble();
+                m_xAccelerometerData.dX = lstData.at( 1 ).toDouble();
+                m_xAccelerometerData.dX = lstData.at( 2 ).toDouble();
+
+                break;
+            }
+
             case eHUDViewComponentID_GPS:
+            {
+                /* Parse out the individual pieces of data. */
+                QRegularExpression Regex( "GPRMC,([\\d\\.\\d]+),([A|V]),([\\d\\.\\d]+),N,([\\d\\.\\d]+),W,([\\d\\.\\d]+),([\\d\\.\\d]+),([\\d]+),,,A" );
+                QRegularExpressionMatch Matches = Regex.match( pCaller->readAll() );
+
+                if ( Matches.hasMatch() )
+                {
+                    qDebug() << "GPS:";
+                    qDebug() << "    Time: " << Matches.captured( 1 );
+                    qDebug() << "    Valid: " << Matches.captured( 2 );
+                    qDebug() << "    Latitude: " << Matches.captured( 3 );
+                    qDebug() << "    Longitude: " << Matches.captured( 4 );
+                    qDebug() << "    Speed: " << Matches.captured( 5 );
+                    qDebug() << "    Direction: " << Matches.captured( 6 );
+                    qDebug() << "    Date: " << Matches.captured( 7 );
+
+                    /* Update the data model. */
+                    m_xGPSData.bHasFix = true;
+                    m_xGPSData.dLatitude = Matches.captured( 3 ).toDouble();
+                    m_xGPSData.dLongitude = Matches.captured( 4 ).toDouble();
+                    m_xGPSData.dSpeed = Matches.captured( 5 ).toDouble();
+                    m_xGPSData.dDirection = Matches.captured( 6 ).toDouble();
+                }
+                else
+                {
+                    qDebug() << "GPS: No fix!";
+                    m_xGPSData.bHasFix = false;
+                }
+
+                break;
+            }
+
             case eHUDViewComponentID_HandlebarButtons:
+                /* Nothing to do (yet). */
+                break;
+
             case eHUDViewComponentID_LightSensor:
+                /* Store the value. */
+                m_LightSensorData = pCaller->readAll();
+                qDebug() << "Light Sensor:" << m_LightSensorData;
+                break;
+
             default:
                 /* Nothing to do. */
                 qDebug() << "ControlEngine::vHandleData() received data for process: " << pCaller->program();
@@ -311,6 +372,46 @@ bool ControlEngine::bParseConfig( const QString & sConfigPath )
     }
 
     return bReturn;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void ControlEngine::vDisplayInit()
+{
+    st7735_128x160_spi_init( 22, 1, 23 );
+    ssd1306_setMode( LCD_MODE_NORMAL );
+    st7735_setRotation( 3 );
+    ssd1306_fillScreen8( 0x00 );
+    ssd1306_setFixedFont( UbuntuMono25x34 );
+    ssd1306_clearScreen8();
+    m_DisplayRefreshTimer.start();
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void ControlEngine::vUpdateDisplay()
+{
+    /* Determine what to display. */
+    switch ( m_eDisplayMode )
+    {
+    case eControlDisplay_Time:
+    {
+        ssd1306_setColor( RGB_COLOR8( 255, 0, 0 ) );
+        ssd1306_printFixed8( 1,  8, QTime::currentTime().toString( "hh:mm" ).toStdString().c_str(), STYLE_NORMAL );
+        break;
+    }
+
+    case eControlDisplay_Light:
+        ssd1306_setColor( RGB_COLOR8( 255, 255, 0 ) );
+        ssd1306_printFixed8( 1,  8, m_LightSensorData, STYLE_NORMAL );
+        break;
+
+    case eControlDisplay_Speed:
+    case eControlDisplay_Direction:
+        break;
+
+    default:
+        /* Nothing to do. */
+        break;
+    }
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
 

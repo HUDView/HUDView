@@ -4,6 +4,7 @@
 #include <QCoreApplication>
 #include <QObject>
 #include <QProcess>
+#include <QTimer>
 
 class ControlEngine : public QObject
 {
@@ -48,12 +49,43 @@ public:
 
 private slots:
     void vHandleData();
+    void vUpdateDisplay();
 
 private:
+    enum eControlDisplayMode_t {
+        eControlDisplayModeMin = 0,
+
+        eControlDisplay_Time,
+        eControlDisplay_Light,
+        eControlDisplay_Speed,
+        eControlDisplay_Direction,
+
+        eControlDisplayModeMax
+    } m_eDisplayMode;
+
     QString m_sConfigPath;
     QList<xHUDViewComponent_t> m_lstRegisteredComponents;
 
+    QTimer m_DisplayRefreshTimer;
+
+    struct xAccelerationInformation_t {
+        double dX;
+        double dY;
+        double dZ;
+    } m_xAccelerometerData;
+
+    QByteArray m_LightSensorData;
+
+    struct xGPSInformation_t {
+        bool bHasFix;
+        double dLatitude;
+        double dLongitude;
+        double dSpeed;
+        double dDirection;
+    } m_xGPSData;
+
     bool bParseConfig( const QString & sConfigPath );
+    void vDisplayInit();
 };
 
 #endif // CONTROLENGINE_H

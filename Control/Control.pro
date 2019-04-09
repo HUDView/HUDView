@@ -24,7 +24,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    src/controlengine.h
+    src/controlengine.h \
+    src/ubuntumono.h
 
 unix:!macx: LIBS += -L$$PWD/../Display/ssd1306/bld/ -lssd1306
 
