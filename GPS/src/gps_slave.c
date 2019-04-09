@@ -171,6 +171,8 @@ int main(int argc, char* argv[]) {
 
   signal(SIGINT, signalHandler);
 
+  setbuf( stdout, NULL );
+
 	initialize_serial();
 	size_t s = 255;	
 	char* buffer;
@@ -178,7 +180,7 @@ int main(int argc, char* argv[]) {
 
 	while(run) {
 		get_full_message();
-		usleep(1000);
+		usleep(10 * 1000);
 
 	}
  
