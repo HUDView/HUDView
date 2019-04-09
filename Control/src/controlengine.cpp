@@ -379,7 +379,7 @@ void ControlEngine::vDisplayInit()
 {
     st7735_128x160_spi_init( 22, 1, 23 );
     ssd1306_setMode( LCD_MODE_NORMAL );
-    st7735_setRotation( 3 );
+    st7735_setRotation( 1 );
     ssd1306_fillScreen8( 0x00 );
     ssd1306_setFixedFont( UbuntuMono25x34 );
     ssd1306_clearScreen8();
@@ -389,13 +389,24 @@ void ControlEngine::vDisplayInit()
 
 void ControlEngine::vUpdateDisplay()
 {
+    /* Clear the display. */
+    //ssd1306_clearScreen8();
+
     /* Determine what to display. */
     switch ( m_eDisplayMode )
     {
     case eControlDisplay_Time:
     {
-        ssd1306_setColor( RGB_COLOR8( 255, 0, 0 ) );
-        ssd1306_printFixed8( 1,  8, QTime::currentTime().toString( "hh:mm" ).toStdString().c_str(), STYLE_NORMAL );
+        if ( LIGHT_SENSOR_DARK_THRESHOLD > m_LightSensorData.left( m_LightSensorData.length() - 1 ).toInt() )
+        {
+            ssd1306_setColor( RGB_COLOR8( 255, 0, 0 ) );
+        }
+        else
+        {
+            ssd1306_setColor( RGB_COLOR8( 255, 255, 255 ) );
+        }
+
+        ssd1306_printFixed8( 16,  48, QTime::currentTime().toString( "hh:mm" ).toStdString().c_str(), STYLE_NORMAL );
         break;
     }
 
