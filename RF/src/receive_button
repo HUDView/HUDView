@@ -1,0 +1,17 @@
+#!/usr/bin/python3
+
+import time 
+import RPi.GPIO as GPIO
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.add_event_detect(27, GPIO.RISING)
+
+def button_press_callback(f):
+    print("0")
+    #time.sleep(0.5)
+
+GPIO.add_event_callback(27, button_press_callback)
+
+while(True):
+    time.sleep(0.1)
