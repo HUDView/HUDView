@@ -19,13 +19,13 @@ class Unbuffered(object):
 sys.stdout = Unbuffered(sys.stdout)
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(0, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.add_event_detect(0, GPIO.RISING)
+GPIO.setup(26, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.add_event_detect(26, GPIO.RISING)
 
 def button_press_callback(f):
     print("0")
 
-GPIO.add_event_callback(0, button_press_callback)
+GPIO.add_event_callback(26, button_press_callback)
 
 while(True):
     time.sleep(0.1)
