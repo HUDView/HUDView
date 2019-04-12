@@ -17,7 +17,7 @@ static void vSignalHandler( int iSignal );
 ControlEngine::ControlEngine( QObject * pParent ) : QObject( pParent )
 {
     m_sConfigPath = "";
-    m_eDisplayMode = eControlDisplay_Time;
+    m_eDisplayMode = eControlDisplayMode_Time;
 
     /* Set up the refresh timer for the display. */
     m_DisplayRefreshTimer.setInterval( 500 );
