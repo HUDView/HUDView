@@ -245,26 +245,27 @@ void ControlEngine::vHandleData()
             }
 
             case eHUDViewComponentID_HandlebarButtons:
-                /* Consume the input. */
-                ( void )pCaller->readAll();
+                /* Filter out spurious input. */
+                if ( "0\n" == pCaller->readAll() )
+                {
+                    /* Update the display mode. */
+                    if ( eControlDisplayMode_Time == m_eDisplayMode )
+                    {
+                        m_eDisplayMode = eControlDisplayMode_Speed;
+                    }
+                    else if ( eControlDisplayMode_Speed == m_eDisplayMode )
+                    {
+                        m_eDisplayMode = eControlDisplayMode_Direction;
+                    }
+                    else
+                    {
+                        m_eDisplayMode = eControlDisplayMode_Time;
+                    }
 
-                /* Update the display mode. */
-                if ( eControlDisplayMode_Time == m_eDisplayMode )
-                {
-                    m_eDisplayMode = eControlDisplayMode_Speed;
+                    /* Clear the display and immediately refresh. */
+                    ssd1306_clearScreen8();
+                    vUpdateDisplay();
                 }
-                else if ( eControlDisplayMode_Speed == m_eDisplayMode )
-                {
-                    m_eDisplayMode = eControlDisplayMode_Direction;
-                }
-                else
-                {
-                    m_eDisplayMode = eControlDisplayMode_Time;
-                }
-
-                /* Clear the display and immediately refresh. */
-                ssd1306_clearScreen8();
-                vUpdateDisplay();
 
                 break;
 
