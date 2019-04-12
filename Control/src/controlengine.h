@@ -56,10 +56,9 @@ private:
     enum eControlDisplayMode_t {
         eControlDisplayModeMin = 0,
 
-        eControlDisplay_Time,
-        eControlDisplay_Light,
-        eControlDisplay_Speed,
-        eControlDisplay_Direction,
+        eControlDisplayMode_Time,
+        eControlDisplayMode_Speed,
+        eControlDisplayMode_Direction,
 
         eControlDisplayModeMax
     } m_eDisplayMode;

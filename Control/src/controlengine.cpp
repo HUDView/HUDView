@@ -245,7 +245,27 @@ void ControlEngine::vHandleData()
             }
 
             case eHUDViewComponentID_HandlebarButtons:
-                qDebug() << "Handlebar Buttons: Press for button" << pCaller->readAll();
+                /* Consume the input. */
+                ( void )pCaller->readAll();
+
+                /* Update the display mode. */
+                if ( eControlDisplayMode_Time == m_eDisplayMode )
+                {
+                    m_eDisplayMode = eControlDisplayMode_Speed;
+                }
+                else if ( eControlDisplayMode_Speed == m_eDisplayMode )
+                {
+                    m_eDisplayMode = eControlDisplayMode_Direction;
+                }
+                else
+                {
+                    m_eDisplayMode = eControlDisplayMode_Time;
+                }
+
+                /* Clear the display and immediately refresh. */
+                ssd1306_clearScreen8();
+                vUpdateDisplay();
+
                 break;
 
             case eHUDViewComponentID_LightSensor:
@@ -389,34 +409,50 @@ void ControlEngine::vDisplayInit()
 
 void ControlEngine::vUpdateDisplay()
 {
-    /* Clear the display. */
-    //ssd1306_clearScreen8();
+    /* Set the font color depending on the light sensor value. */
+    if ( LIGHT_SENSOR_DARK_THRESHOLD > m_LightSensorData.left( m_LightSensorData.length() - 1 ).toInt() )
+    {
+        /* Red font for nighttime. */
+        ssd1306_setColor( RGB_COLOR8( 255, 0, 0 ) );
+    }
+    else
+    {
+        /* White font for daytimne. */
+        ssd1306_setColor( RGB_COLOR8( 255, 255, 255 ) );
+    }
 
     /* Determine what to display. */
     switch ( m_eDisplayMode )
     {
-    case eControlDisplay_Time:
-    {
-        if ( LIGHT_SENSOR_DARK_THRESHOLD > m_LightSensorData.left( m_LightSensorData.length() - 1 ).toInt() )
+    case eControlDisplayMode_Time:
+        ssd1306_printFixed8( 16, 48, QTime::currentTime().toString( "hh:mm" ).toStdString().c_str(), STYLE_NORMAL );
+        break;
+
+    case eControlDisplayMode_Speed:
+        /* Only attempt to display something if there is valid data to process. */
+        if ( m_xGPSData.bHasFix )
         {
-            ssd1306_setColor( RGB_COLOR8( 255, 0, 0 ) );
+            ssd1306_printFixed8( 16, 48, QString::number( qRound( m_xGPSData.dSpeed * 1.15078 ) ).toStdString().c_str(), STYLE_NORMAL );
         }
         else
         {
-            ssd1306_setColor( RGB_COLOR8( 255, 255, 255 ) );
+            ssd1306_printFixed8( 16, 48, "---", STYLE_NORMAL );
         }
 
-        ssd1306_printFixed8( 16,  48, QTime::currentTime().toString( "hh:mm" ).toStdString().c_str(), STYLE_NORMAL );
-        break;
-    }
-
-    case eControlDisplay_Light:
-        ssd1306_setColor( RGB_COLOR8( 255, 255, 0 ) );
-        ssd1306_printFixed8( 1,  8, m_LightSensorData, STYLE_NORMAL );
         break;
 
-    case eControlDisplay_Speed:
-    case eControlDisplay_Direction:
+    case eControlDisplayMode_Direction:
+        /* Only attempt to display something if there is valid data to process. */
+        if ( m_xGPSData.bHasFix )
+        {
+            // TODO
+            ssd1306_printFixed8( 16, 48, "DIR", STYLE_NORMAL );
+        }
+        else
+        {
+            ssd1306_printFixed8( 16, 48, "--", STYLE_NORMAL );
+        }
+
         break;
 
     default:
