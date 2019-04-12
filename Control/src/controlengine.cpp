@@ -433,7 +433,8 @@ void ControlEngine::vUpdateDisplay()
         /* Only attempt to display something if there is valid data to process. */
         if ( m_xGPSData.bHasFix )
         {
-            ssd1306_printFixed8( 16, 48, QString::number( qRound( m_xGPSData.dSpeed * 1.15078 ) ).toStdString().c_str(), STYLE_NORMAL );
+            ssd1306_printFixed8( 16, 48, QString::number( qRound( m_xGPSData.dSpeed * 1.15078 ) )
+                                 .toStdString().c_str(), STYLE_NORMAL );
         }
         else
         {
@@ -446,12 +447,12 @@ void ControlEngine::vUpdateDisplay()
         /* Only attempt to display something if there is valid data to process. */
         if ( m_xGPSData.bHasFix )
         {
-            // TODO
-            ssd1306_printFixed8( 16, 48, "DIR", STYLE_NORMAL );
+            ssd1306_printFixed8( 16, 48, sGPSDirectionToString( m_xGPSData.dDirection ).toStdString().c_str(),
+                                 STYLE_NORMAL );
         }
         else
         {
-            ssd1306_printFixed8( 16, 48, "--", STYLE_NORMAL );
+            ssd1306_printFixed8( 16, 48, "-- ", STYLE_NORMAL );
         }
 
         break;
@@ -460,6 +461,89 @@ void ControlEngine::vUpdateDisplay()
         /* Nothing to do. */
         break;
     }
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+QString ControlEngine::sGPSDirectionToString( const double & dDirection )
+{
+    QString sReturn = "-- ";
+
+    /* Ensure a sane measurement. */
+    if ( ( 0.0 <= dDirection ) && ( 360.0 >= dDirection ) )
+    {
+        /* Determine the direction. */
+        if ( ( ( 0.0 <= dDirection ) && ( 11.25 > dDirection ) )
+             || ( ( 348.75 <= dDirection ) && ( 360.0 >= dDirection ) ) )
+        {
+            sReturn = "N  ";
+        }
+        else if ( ( 11.25 <= dDirection ) && ( 33.75 > dDirection ) )
+        {
+            sReturn = "NNE";
+        }
+        else if ( ( 33.75 <= dDirection ) && ( 56.25 > dDirection ) )
+        {
+            sReturn = "NE ";
+        }
+        else if ( ( 56.25 <= dDirection ) && ( 78.75 > dDirection ) )
+        {
+            sReturn = "ENE";
+        }
+        else if ( ( 78.75 <= dDirection ) && ( 101.25 > dDirection ) )
+        {
+            sReturn = "E  ";
+        }
+        else if ( ( 101.25 <= dDirection ) && ( 123.75 > dDirection ) )
+        {
+            sReturn = "ESE";
+        }
+        else if ( ( 123.75 <= dDirection ) && ( 146.25 > dDirection ) )
+        {
+            sReturn = "SE ";
+        }
+        else if ( ( 146.25 <= dDirection ) && ( 168.75 > dDirection ) )
+        {
+            sReturn = "SSE";
+        }
+        else if ( ( 168.75 <= dDirection ) && ( 191.25 > dDirection ) )
+        {
+            sReturn = "S  ";
+        }
+        else if ( ( 191.25 <= dDirection ) && ( 213.75 > dDirection ) )
+        {
+            sReturn = "SSW";
+        }
+        else if ( ( 213.75 <= dDirection ) && ( 236.25 > dDirection ) )
+        {
+            sReturn = "SW ";
+        }
+        else if ( ( 236.25 <= dDirection ) && ( 258.75 > dDirection ) )
+        {
+            sReturn = "WSW";
+        }
+        else if ( ( 258.75 <= dDirection ) && ( 281.25 > dDirection ) )
+        {
+            sReturn = "W  ";
+        }
+        else if ( ( 281.225 <= dDirection ) && ( 303.75 > dDirection ) )
+        {
+            sReturn = "WNW";
+        }
+        else if ( ( 303.75 <= dDirection ) && ( 326.25 > dDirection ) )
+        {
+            sReturn = "NW ";
+        }
+        else if ( ( 326.25 <= dDirection ) && ( 348.75 > dDirection ) )
+        {
+            sReturn = "NNW";
+        }
+    }
+    else
+    {
+        qDebug() << "WARNING: ControlEngine::sGPSDirectionToString got invalid direction.";
+    }
+
+    return sReturn;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
 

@@ -86,6 +86,7 @@ private:
 
     bool bParseConfig( const QString & sConfigPath );
     void vDisplayInit();
+    QString sGPSDirectionToString( const double & dDirection );
 };
 
 #endif // CONTROLENGINE_H
