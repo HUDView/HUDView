@@ -51,6 +51,7 @@ public:
 private slots:
     void vHandleData();
     void vUpdateDisplay();
+    void vChangeMode();
 
 private:
     enum eControlDisplayMode_t {
@@ -67,6 +68,7 @@ private:
     QList<xHUDViewComponent_t> m_lstRegisteredComponents;
 
     QTimer m_DisplayRefreshTimer;
+    QTimer m_ModeSwitchTimer;
 
     struct xAccelerationInformation_t {
         double dX;

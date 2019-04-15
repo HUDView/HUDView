@@ -24,6 +24,10 @@ ControlEngine::ControlEngine( QObject * pParent ) : QObject( pParent )
     m_DisplayRefreshTimer.setSingleShot( false );
     connect( &m_DisplayRefreshTimer, SIGNAL( timeout() ), this, SLOT( vUpdateDisplay() ) );
 
+    m_ModeSwitchTimer.setInterval( 5000 );
+    m_ModeSwitchTimer.setSingleShot( false );
+    connect( &m_ModeSwitchTimer, SIGNAL( timeout() ), this, SLOT( vChangeMode() ) );
+
     /* Install the Ctrl-C handler. */
     signal( SIGINT, vSignalHandler );
 }
@@ -246,6 +250,7 @@ void ControlEngine::vHandleData()
 
             case eHUDViewComponentID_HandlebarButtons:
                 /* Filter out spurious input. */
+#if 0
                 if ( "0\n" == pCaller->readAll() )
                 {
                     /* Update the display mode. */
@@ -266,6 +271,7 @@ void ControlEngine::vHandleData()
                     ssd1306_clearScreen8();
                     vUpdateDisplay();
                 }
+#endif
 
                 break;
 
@@ -405,6 +411,7 @@ void ControlEngine::vDisplayInit()
     ssd1306_setFixedFont( UbuntuMono25x34 );
     ssd1306_clearScreen8();
     m_DisplayRefreshTimer.start();
+    m_ModeSwitchTimer.start();
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
 
@@ -461,6 +468,28 @@ void ControlEngine::vUpdateDisplay()
         /* Nothing to do. */
         break;
     }
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+void ControlEngine::vChangeMode()
+{
+    /* Update the display mode. */
+    if ( eControlDisplayMode_Time == m_eDisplayMode )
+    {
+        m_eDisplayMode = eControlDisplayMode_Speed;
+    }
+    else if ( eControlDisplayMode_Speed == m_eDisplayMode )
+    {
+        m_eDisplayMode = eControlDisplayMode_Direction;
+    }
+    else
+    {
+        m_eDisplayMode = eControlDisplayMode_Time;
+    }
+
+    /* Clear the display and immediately refresh. */
+    ssd1306_clearScreen8();
+    vUpdateDisplay();
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
 
