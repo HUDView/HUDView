@@ -116,8 +116,10 @@ void validate_checksum(unsigned char rbyte, gps_slave* slave) {
 		}
 			
 		if(given == checksum) {
-      printf("%s\n", slave->sentence);
-			state_ptr=read_first_byte;
+		        printf("%s\n", slave->sentence);
+		        state_ptr=read_first_byte;
+			tcflush(serial_port, TCIFLUSH);
+			usleep(10 * 1000);
 		}
 		else {
 			state_ptr=read_first_byte;
@@ -153,11 +155,12 @@ int initialize_serial() {
 // Read a single byte from serial port
 char fetch_byte() {
 	char rbyte;
-	int r; 
+	int r;
 	do {	
 		r = read(serial_port, (void*) &rbyte, 1);
 
 	} while(r <= 0);
+	//printf("%c\n", rbyte);
 	return rbyte;
 
 }
@@ -173,20 +176,19 @@ int main(int argc, char* argv[]) {
 
   setbuf( stdout, NULL );
 
-	initialize_serial();
-	size_t s = 255;	
-	char* buffer;
+  initialize_serial();
+
+  size_t s = 255;
+  char* buffer;
 
 
-	while(run) {
-		get_full_message();
-		usleep(10 * 1000);
+  while(run) {
+	  get_full_message();
+  }
 
-	}
- 
-	close(serial_port);
+  close(serial_port);
 
-	return 0;
+  return 0;
 		
 }
 
